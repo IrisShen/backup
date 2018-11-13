@@ -1,0 +1,11 @@
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+body {
+            font-family: Helvetica Neue, Arial, sans-serif;
+        }
+html{
+    font-size: 14px;
+}
+.xl .btn .label{
+    display: none;
+}

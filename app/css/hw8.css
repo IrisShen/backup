@@ -1,0 +1,50 @@
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+.form-box {
+    background-color: #f8f8f8;
+    
+    padding-left: 10%;
+    padding-right: 10%;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    /* width: 70%; */
+    
+}
+
+.form-title {
+    text-align: center;
+    line-height: 30px;
+}
+
+@media (max-width:480px){
+    .form-box{
+        padding: 20px;
+    }
+    body {
+        padding: 10px;
+    }      
+    .warning-banner{
+        margin-left: 10px;
+        margin-right:10px;
+    }
+}
+.req_star {
+    color: red;
+}
+
+input.ng-touched.ng-invalid{
+    border: 1px solid red;
+}
+
+.warning-banner{
+    margin-left: 15%;
+    margin-right: 15%;
+}
+
+.liked {
+    color: burlywood;
+}
+@media (min-width:720px){
+
+
+}

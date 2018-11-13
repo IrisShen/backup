@@ -1,0 +1,193 @@
+<div class="container  rounded border form-box">
+
+        <h5 class="form-title">Entertainment Event Ticket Search</h5>
+
+<form [formGroup] = "user_input" (ngSubmit) = "onSubmit()">
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="keyword-input">Keyword<span class="req_star"> *</span></label>
+            <div class="col-lg-9 ">
+                <input class="form-control"  (change) ="onType()" (input) = "onType()" type="text" [formControl]="keyword" id="keyword-input" matInput [matAutocomplete]="auto" placeholder="Enter Artist, Team or Event Name (eg. Lakers)" required >
+                <div class="req_star" *ngIf ="keyword.hasError('required') && keyword.touched" >Please enter a keyword.</div>
+                <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor ="let ac of auto_options" [value] = "ac">{{ ac }}</mat-option>
+                </mat-autocomplete>  
+       
+            </div> 
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="category-select">Category</label>
+            <div class="col-lg-3">
+                <select class="form-control" formControlName="category" id="category-select">
+                    <option value = 'All'>All</option>
+                    <option value = "Music">Music</option>
+                    <option value = "Sports">Sports</option>
+                    <option value = "Arts">Arts & Theatre</option>
+                    <option value = "Film">Film</option>
+                    <option value = "Miscellaneous">Miscellaneous</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="Distance-input">Distance</label>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" id="Distance-input" formControlName="distance" placeholder="10">
+            </div>
+            <div class="col-lg-3">
+                <select class="form-control" id="distance-unit" formControlName="unit">
+                    <option value="miles">Miles</option>
+                    <option value="kilometers">Kilometers</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="from-location">From<span class="req_star"> *</span></label>
+            <div class="col-lg-9">
+                <div>
+                <label class="form-check-label">
+                <input type="radio" name="locationRadios" id="loactionRadios1" value="option1" formControlName="locationRadios" (change)="updateEdit()" checked> Current location</label>
+                <br>
+                <label class="form-check-label">
+                <input type="radio" name="locationRadios" id="locationRadios2" formControlName="locationRadios" value="option2" (change)="updateEdit()"> Other. Please specify:</label>
+                <div style="padding-left: 20px;">
+                <input class="form-control" formControlName="locationInput" type="text" id="keyword-input"> 
+                    <div class="req_star" *ngIf ="locationInput.hasError('required') && locationInput.touched"  >Please enter a location.</div>
+                </div>
+                
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-lg-6">
+                <div>
+                <button type="submit" class="btn btn-primary" id="search_btn" [disabled]="!user_input.valid"><span><img src="assets/images/baseline_search_white_24dp.png" ></span>Search</button>
+                <button type="button" class="btn btn-default" (click)="resetForm()" style="border:1px solid #ced4da; margin-left: 10px"><span><img src="assets/images/baseline_clear_all_black_24dp.png"></span>Clear</button>
+                </div>
+            </div>
+        </div>
+</form>
+</div>
+<br>
+<div class="d-flex justify-content-center">
+<ul class="nav nav-pills">
+    <li class="nav-item active">
+        <a class="nav-link active" href="#results" data-toggle="tab">Results</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#favs" data-toggle="tab">Favorites</a>
+    </li>
+</ul>
+
+<!-- <button type="button" class="btn btn-primary">Results</button>
+<button type="button" style="color: #007bff" class="btn btn-default">Favorites</button> -->
+
+</div>
+<!-- <div *ngIf="loadingData" style="padding-top:100px; width:auto; padding-left: 15%;padding-right :15%">
+        <div class="progress" >
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%; height:100%;"></div>
+        </div>
+    </div>  -->
+ 
+<br/>
+<div class="submitted">
+<div class = "tab-content" >
+<div class="tab-pane active" id="results">
+<div *ngIf = "errorEvent" class="alert alert-danger warning-banner">Failed to get search results.</div>
+<div *ngIf = "noEvent" class="alert alert-warning warning-banner">No records.</div>
+        
+        
+<div *ngIf = "yesEvent" class="container" >
+    <div style="float:right;"><button class="btn btn-default" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px">Details<span><img src="assets/images/baseline_keyboard_arrow_right_black_18dp.png"></span></button></div>
+    <table class="table table-hover" >
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Date</th>
+            <th scope="col">Event</th>
+            <th scope="col">Category</th>
+            <th scope="col">Venue Info</th>
+            <th scope="col">Favorite</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor = "let dt of outputData; index as i" >
+            <th scope="row">{{i+1}}</th>
+            <td>{{dt.date}}</td>
+            <td ><a matTooltip="{{dt.name}}" href = "{{dt.eventlink}}">{{dt.abbr}}</a></td>
+            <td>{{dt.category}}</td>
+            <td>{{dt.venue}}</td>
+            <td><button class="btn border" (click)="dt.clicked = !dt.clicked" (click)="addFav(dt)">
+                <img src={{dt.clicked?disliked:liked}}>
+            </button></td>
+        </tr>
+    </tbody>
+    </table>
+</div>
+
+<div class="container">	
+<button class="btn btn-default" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px"><span><img src="assets/images/baseline_keyboard_arrow_left_black_18dp.png">List</span></button>
+<div style="float:right"><a class="twitter-share-button" data-url="test" data-text="Check out" data-hashtags="CSCI571EventSearch" data-size="large" href="https://twitter.com/intent/tweet"></a>
+</div>
+<ul class="nav justify-content-end nav-tabs">
+<li class="nav-item"><a class="nav-link active" href="#event" data-toggle="tab">Event</a></li>
+<li class="nav-item"><a class="nav-link" href="#artist" data-toggle="tab">Artist/Teams</a></li>
+<li class="nav-item"><a class="nav-link" href="#venue" data-toggle="tab">Venue</a></li>
+<li class="nav-item"><a class="nav-link" href="#upcoming" data-toggle="tab">UpcomingEvents</a></li>
+</ul>
+                
+<div class="tab-content">
+<div class="tab-pane active" id="event">
+<h3>event</h3>
+</div>
+<div class="tab-pane" id="artist">
+<h3>artist</h3>
+</div>
+<div class="tab-pane" id="venue">
+<h3>venue</h3>
+</div>
+<div class="tab-pane" id="upcoming">
+<h3>UpcomingEvents</h3>
+</div>
+</div>
+</div>
+                
+
+
+
+</div>
+<div class="tab-pane" id="favs">
+<div *ngIf = "yesEvent && !fav_list.length" class="alert alert-warning warning-banner">No records.</div>
+<div *ngIf = "yesEvent && fav_list.length" class="container" >
+
+<table class="table table-hover" >
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Date</th>
+            <th scope="col">Event</th>
+            <th scope="col">Category</th>
+            <th scope="col">Venue Info</th>
+            <th scope="col">Favorite</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor = "let dt of fav_list; index as i" >
+            <th scope="row">{{i+1}}</th>
+            <!-- [ngClass] ="{'unliked': !dt.clicked,'liked':dt.clicked}"  -->
+            <td>{{dt.date}}</td>
+            <td ><a matTooltip="{{dt.name}}" href = "{{dt.eventlink}}" >{{dt.abbr}}</a></td>
+            <td>{{dt.category}}</td>
+            <td>{{dt.venue}}</td>
+            <td><button class="btn border" (click)="dt.clicked = !dt.clicked;addFav(dt)">
+                    <i class="material-icons">
+                            delete
+                            </i>
+            </button></td>
+        </tr>
+    </tbody>
+    </table>
+    </div>
+<!-- </mat-tab>
+</mat-tab-group> -->
+</div>
+</div>
+</div>

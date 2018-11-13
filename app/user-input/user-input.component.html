@@ -1,0 +1,90 @@
+<style>
+        input.ng-touched.ng-invalid{
+            border: 1px solid red;
+        }
+</style>
+
+<div class="container border rounded form-box">
+
+        <h5 class="form-title">Entertainment Event Ticket Search</h5>
+
+<form [formGroup] = "user_input" (ngSubmit) = "onSubmit()">
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="keyword-input">Keyword<span class="req_star"> *</span></label>
+            <div class="col-lg-9 ">
+                <input class="form-control" type="text" formControlName="keyword" id="keyword-input" placeholder="Enter Artist, Team or Event Name (eg. Lakers)" required>
+                <div class="req_star" *ngIf ="keyword.hasError('required') && keyword.touched" >Please enter a keyword.</div>
+            </div>
+
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="category-select">Category</label>
+            <div class="col-lg-3">
+                <select class="form-control" formControlName="category" id="category-select">
+                    <option value = 'All'>All</option>
+                    <option value = "Music">Music</option>
+                    <option value = "Sports">Sports</option>
+                    <option value = "Arts">Arts & Theatre</option>
+                    <option value = "Film">Film</option>
+                    <option value = "Miscellaneous">Miscellaneous</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="Distance-input">Distance</label>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" id="Distance-input" formControlName="distance" placeholder="10">
+            </div>
+            <div class="col-lg-3">
+                <select class="form-control" id="distance-unit" formControlName="unit">
+                    <option value="miles">Miles</option>
+                    <option value="kilometers">Kilometers</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-lg-3 col-form-label" for="from-location">From<span class="req_star"> *</span></label>
+            <div class="col-lg-9">
+                <div>
+                <label class="form-check-label">
+                <input type="radio" name="locationRadios" id="loactionRadios1" value="option1" formControlName="locationRadios" (change)="updateEdit()" checked> Current location</label>
+                <br>
+                <label class="form-check-label">
+                <input type="radio" name="locationRadios" id="locationRadios2" formControlName="locationRadios" value="option2" (change)="updateEdit()"> Other. Please specify:</label>
+                <div style="padding-left: 20px;">
+                <input class="form-control" formControlName="locationInput" type="text" id="keyword-input"> 
+                    <div class="req_star" *ngIf ="locationInput.hasError('required') && locationInput.touched"  >Please enter a location.</div>
+                </div>
+                
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-lg-6">
+                <div>
+                <button type="submit" class="btn btn-primary" id="search_btn" [disabled]="!user_input.valid"><span><img src="assets/images/baseline_search_white_24dp.png" ></span>Search</button>
+                <button type="button" class="btn btn-default" (click)="resetForm()" style="border:1px solid #ced4da; margin-left: 10px"><span><img src="assets/images/baseline_clear_all_black_24dp.png"></span>Clear</button>
+                </div>
+            </div>
+        </div>
+</form>
+</div>
+<br>
+<div class="d-flex justify-content-center">
+<ul class="nav nav-pills">
+    <li class="nav-item">
+        <a class="nav-link active" href="#">Results</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Favorites</a>
+    </li>
+</ul>
+</div>
+
+ <!-- <div *ngIf='loadingData' style="padding-top:100px; width:auto;">
+    <div class="progress" >
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%; height:100%;"></div>
+    </div>
+</div>  -->
+<div *ngIf = "errorEvent" class="alert alert-danger">Failed to get search results.</div>
+<div *ngIf = "noEvent" class="alert alert-warning">No records.</div>
