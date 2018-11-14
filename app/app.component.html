@@ -1,3 +1,4 @@
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBkI-COCLg7jGjvVFFdF5On9dWPewHV5HQ"></script>
 <div class="container  rounded border form-box">
 
         <h5 class="form-title">Entertainment Event Ticket Search</h5>
@@ -91,12 +92,13 @@
 <div class="submitted">
 <div class = "tab-content" >
 <div class="tab-pane active" id="results">
+<div class="container">
 <div *ngIf = "errorEvent" class="alert alert-danger warning-banner">Failed to get search results.</div>
 <div *ngIf = "noEvent" class="alert alert-warning warning-banner">No records.</div>
-        
+</div>
         
 <div *ngIf = "yesEvent" class="container" >
-    <div style="float:right;"><button class="btn btn-default" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px">Details<span><img src="assets/images/baseline_keyboard_arrow_right_black_18dp.png"></span></button></div>
+    <button class="btn btn-default" [disabled]="!DetailTag" (click)="detailTag()" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px;float: right;">Details<span><img src="assets/images/baseline_keyboard_arrow_right_black_18dp.png"></span></button>
     <table class="table table-hover" >
         <thead>
         <tr>
@@ -109,57 +111,212 @@
         </tr>
     </thead>
     <tbody>
-        <tr *ngFor = "let dt of outputData; index as i" >
+        <tr *ngFor = "let dt of outputData; index as i" [class.table-warning]="highlight[i]">
             <th scope="row">{{i+1}}</th>
             <td>{{dt.date}}</td>
-            <td ><a matTooltip="{{dt.name}}" href = "{{dt.eventlink}}">{{dt.abbr}}</a></td>
+            <td><div class="detail-links" matTooltip="{{dt.name}}" (click)="displayDetail(i)">{{dt.abbr}}</div></td>
             <td>{{dt.category}}</td>
             <td>{{dt.venue}}</td>
             <td><button class="btn border" (click)="dt.clicked = !dt.clicked" (click)="addFav(dt)">
-                <img src={{dt.clicked?disliked:liked}}>
+                <div><img src={{dt.clicked?disliked:liked}}></div>
             </button></td>
         </tr>
     </tbody>
     </table>
 </div>
+<div class="container"></div>
 
-<div class="container">	
-<button class="btn btn-default" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px"><span><img src="assets/images/baseline_keyboard_arrow_left_black_18dp.png">List</span></button>
-<div style="float:right"><a class="twitter-share-button" data-url="test" data-text="Check out" data-hashtags="CSCI571EventSearch" data-size="large" href="https://twitter.com/intent/tweet"></a>
+<div *ngIf = "showDetail" class="container">
+<h5 style="text-align: center">{{detailTitle}}</h5>	
+<button class="btn btn-default" (click)="showList()" style="border:1px solid #ced4da; text-align: center; margin-bottom: 10px"><span><img src="assets/images/baseline_keyboard_arrow_left_black_18dp.png">List</span></button>
+<div style="float:right">
+<a href="https://twitter.com/intent/tweet?hashtags=CSCI571EventSearch&text=Check Out {{detailTitle}} at {{detailVenue}}. Website: {{detailUrl}}"><img style="width: 36px;" src="assets/images/Twitter_Social_Icon_Rounded_Square_Color.png"></a>
+<button style="margin-left: 10px" class="btn border" (click)="outputData[detail_index].clicked = !outputData[detail_index].clicked" (click)="addFav(outputData[detail_index])">
+<div><img src={{outputData[detail_index].clicked?disliked:liked}}></div>
+</button>
 </div>
+
+
 <ul class="nav justify-content-end nav-tabs">
 <li class="nav-item"><a class="nav-link active" href="#event" data-toggle="tab">Event</a></li>
 <li class="nav-item"><a class="nav-link" href="#artist" data-toggle="tab">Artist/Teams</a></li>
 <li class="nav-item"><a class="nav-link" href="#venue" data-toggle="tab">Venue</a></li>
 <li class="nav-item"><a class="nav-link" href="#upcoming" data-toggle="tab">UpcomingEvents</a></li>
 </ul>
-                
+<br/>                
 <div class="tab-content">
 <div class="tab-pane active" id="event">
-<h3>event</h3>
-</div>
-<div class="tab-pane" id="artist">
-<h3>artist</h3>
-</div>
-<div class="tab-pane" id="venue">
-<h3>venue</h3>
-</div>
-<div class="tab-pane" id="upcoming">
-<h3>UpcomingEvents</h3>
-</div>
-</div>
-</div>
+<table class="table table-striped event_table">
+<tbody>
+    <tr *ngIf="detailArtist">
+        <th>Artist/Team(s)</th>
+        <td>{{detailArtist}}</td>
+    </tr>
+    <tr *ngIf="detailVenue">
+        <th>Venue</th>
+        <td>{{detailVenue}}</td>
+    </tr>
+    <tr *ngIf="detailTime">
+        <th>Time</th>
+        <td>{{detailDate | date}} {{detailTime}}</td>
+    </tr>
+    <tr *ngIf="detailCat">
+        <th>Category</th>
+        <td>{{detailCat}}</td>
+    </tr> 
+    <tr *ngIf="detailPrice">
+        <th>Price Range</th>
+        <td>{{detailPrice}}</td>
+    </tr>
+    <tr *ngIf="detailStatus">
+        <th>Ticket Status</th>
+        <td>{{detailStatus}}</td>
+    </tr>
+    <tr *ngIf="detailUrl">
+        <th>Buy Ticket At</th>
+        <td><a target="_blank" href={{detailUrl}}>Ticketmaster</a></td>
+    </tr>
+    <tr *ngIf="detailSeat">
+        <th>Seat Map</th>
+        <td><div class="detail-links" data-toggle="modal" data-target="#seatMapImage">View Seat Map Here</div></td>
+        <div class="modal fade" id="seatMapImage" tabindex="-1" role="dialog" aria-labelledby="seatMapLabel" aria-hidden="true" style="background-color:rgba(128,128,128,0.6);">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="seatMapLabel">View Seat Map</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <a href={{detailSeat}} target="_blank">
+                <img src={{detailSeat}} style="max-width:100%;">
+                </a>
                 
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" style="border:1px solid #ced4da" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
+    </tr>
+</tbody>
+</table>
+</div>
+
+<div class="tab-pane" id="artist">
+<div *ngFor = "let person of artist_detail_list">
+<h5 style="text-align:center">{{person.art_name}}</h5>
+
+<div *ngIf="person.art_url">
+<table class="table table-striped artist_table">
+<tr *ngIf="person.art_name">
+<th>Name</th>
+<td>{{person.art_name}}</td>
+</tr>
+<tr *ngIf="person.art_followers">
+<th>Followers</th>
+<td>{{person.art_followers}}</td>
+</tr>
+<tr *ngIf="person.art_pop">
+<th>Popularity</th> 
+<td>
+<div class="progress-wrapper">
+<div class="current">{{person.art_pop}}</div>
+<round-progress z-index=4 [radius]="22" [stroke]="3" [current]=person.art_pop [max]="100" [clockwise]="false"></round-progress>
+</div>
+</td>
+</tr>
+<tr *ngIf="person.art_url">
+<th>Check At</th>
+<td><a target="_blank" href={{person.art_url}}>Spotify</a></td>    
+</tr>
+</table>
+</div>
+
+<div style="line-height: 0;column-count: 3;column-gap: 5px">
+<div *ngFor = "let pimg of person.art_images; index as pind">
+<a target="_blank" href={{pimg}}><img style="width:100%;height: auto;padding-bottom: 5px;" src={{pimg}}></a>
+</div>
+<br/>
+</div>
+<br/>
+</div>
+</div>
+
+<div class="tab-pane" id="venue">
+<h5 style="text-align:center">{{detailVenue}}</h5>
+<table class="table table-striped venue-table">
+<tr *ngIf = "venue_add">
+<th>Address</th>
+<td>{{venue_add}}</td>
+</tr>
+<tr *ngIf = "venue_city">
+<th>City</th>
+<td>{{venue_city}}</td>
+</tr>
+<tr *ngIf = "venue_number">
+<th>Phone Number</th>
+<td>{{venue_number}}</td>
+</tr>    
+<tr *ngIf = "venue_open">
+<th>Open Hours</th>
+<td>{{venue_open}}</td>
+</tr> 
+<tr *ngIf = "venue_rule">
+<th>General Rule</th>
+<td>{{venue_rule}}</td>
+</tr>  
+<tr *ngIf = "venue_child">
+<th>Child Rule</th>
+<td>{{venue_child}}</td>
+</tr>  
+<tr *ngIf = "venue_lat">
+<td colspan="2">
+<agm-map  [latitude]="venue_lat"[longitude]="venue_lon">
+<agm-marker [latitude]="venue_lat" [longitude]="venue_lon"></agm-marker>
+</agm-map>
+    <div id="map"></div></td>
+</tr>
+</table>
+</div>
+
+<div class="tab-pane" id="upcoming">
+<div *ngIf ="upcoming_events">
+<div *ngFor= "let evt of upcoming_events | slice:0:show; index as ievt">
+<div class="card">
+    <div class="card-body">
+        <a target="_blank" href={{evt.uri}}><p class="card-title">{{evt.name}}</p></a>
+        <p><span style="color:rgb(235,115,60)">Artist: {{evt.artist}} </span><span style="color:gray">{{ evt.date | date}} {{evt.time}}</span></p>
+        <p>Type: {{evt.type}}</p>
+    </div>
+</div>
 
 
+<br/>  
+<div class="d-flex justify-content-center">
+<button class="btn btn-primary" *ngIf="ievt==show_limit-1 && show == show_limit" (click)="show = upcoming_events.length">Show More</button>
+</div>    
+<div class="d-flex justify-content-center">
+<button class="btn btn-primary" *ngIf="ievt==upcoming_events.length-1 && show == upcoming_events.length" (click)="show = show_limit">Show Less</button>
+</div>
 
+
+</div>
+</div>
+</div>
+</div>
+
+</div>
 </div>
 <div class="tab-pane" id="favs">
-<div *ngIf = "yesEvent && !fav_list.length" class="alert alert-warning warning-banner">No records.</div>
-<div *ngIf = "yesEvent && fav_list.length" class="container" >
+<div class="container"><div *ngIf = "!fav_list.length" class="alert alert-warning warning-banner">No records.</div></div> 
+<div *ngIf = "fav_list.length" class="container" >
 
 <table class="table table-hover" >
-        <thead>
+    <thead>
         <tr>
             <th scope="col">#</th>
             <th scope="col">Date</th>
@@ -173,8 +330,8 @@
         <tr *ngFor = "let dt of fav_list; index as i" >
             <th scope="row">{{i+1}}</th>
             <!-- [ngClass] ="{'unliked': !dt.clicked,'liked':dt.clicked}"  -->
-            <td>{{dt.date}}</td>
-            <td ><a matTooltip="{{dt.name}}" href = "{{dt.eventlink}}" >{{dt.abbr}}</a></td>
+            <td >{{dt.date}}</td>
+            <td><div class="detail-links" matTooltip="{{dt.name}}" (click)="displayDetail(dt.id)">{{dt.abbr}}</div></td>
             <td>{{dt.category}}</td>
             <td>{{dt.venue}}</td>
             <td><button class="btn border" (click)="dt.clicked = !dt.clicked;addFav(dt)">
@@ -186,8 +343,7 @@
     </tbody>
     </table>
     </div>
-<!-- </mat-tab>
-</mat-tab-group> -->
+
 </div>
 </div>
 </div>

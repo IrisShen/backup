@@ -5,7 +5,15 @@ import { HttpClient,HttpHeaders,HttpClientModule } from '@angular/common/http';
 import { Observable,of } from 'rxjs';
 import { debounceTime, distinctUntilChanged,map} from 'rxjs/operators';
 import { RouterModule, Routes } from '@angular/router';
-
+import { Title } from '@angular/platform-browser';
+import { isAbsolute, join } from 'path';
+import {
+  trigger,
+  state,
+  style,
+  animate,
+  transition
+} from '@angular/animations';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +27,9 @@ export class AppComponent{
   user_loc = {user_lat: '',user_lon:''};
   ip_api_url = 'http://ip-api.com/json';
   req_query = {};
-  ticket_url = 'http://localhost:8080/ticket';
+  host_url = 'http://localhost:8080'
+  ticket_url = `${this.host_url}/ticket`;
+  
 
   constructor (private http: HttpClient){}
 
@@ -44,7 +54,6 @@ export class AppComponent{
   disableOn: boolean = true;
 
       user_input = new FormGroup({
-          // 'keyword' : new FormControl(this.init_value.keyword,{validators: [Validators.required], updateOn:'blur'}),
           'keyword' : new FormControl(this.init_value.keyword,{validators: [Validators.required]}),
           'category' : new FormControl(this.init_value.category),
           'distance': new FormControl(this.init_value.distance),
@@ -71,6 +80,10 @@ export class AppComponent{
       this.noEvent = false;
       this.yesEvent = false;
       this.auto_options = [];
+      this.showDetail = false;
+      this.DetailTag = false;
+      this.fav_list = [];
+
       // this.locationInput.reset({value:'',disabled:true});
 
   }
@@ -99,6 +112,10 @@ export class AppComponent{
           input_loc:this.locationInput.value?this.locationInput.value:'None'
       }
       this.options = {params:this.user_value};
+      this.showDetail = false;
+      this.reset_highlight();
+      this.fav_list = [];
+
 
   }
 
@@ -106,14 +123,18 @@ export class AppComponent{
   noEvent : boolean = false;
   yesEvent : boolean = false;
   loadingData : boolean = false;
-
+  showDetail : boolean = false;
+  DetailTag : boolean = false;
+ 
+  show_limit = 5;
+  show = this.show_limit;
  
 
   getData() {
       return this.http.get(this.ticket_url,this.options);
   }
 
-  auto_url =`http://localhost:8080/auto`;
+  auto_url =`${this.host_url}/auto`;
 
   onType(){
     if(!this.keyword.value){
@@ -135,6 +156,7 @@ export class AppComponent{
   events = [];
   clicked = [];
   outputData =[];
+  highlight = [];
 
   stopLoading(){
     this.loadingData = false;
@@ -168,10 +190,18 @@ export class AppComponent{
               // console.log(this.eventsData);
               console.log('GOT DATA!');
               // console.log(this.outputData);
-              this.events.forEach(element => {
+              // this.events.forEach(element => {
+              for(let idata = 0;idata < this.events.length;idata++){
+                let element = this.events[idata];
                 let event_date = 'N/A';
-                if(element.hasOwnProperty('dates') && element.dates.hasOwnProperty('start') && element.dates.start.hasOwnProperty('localDate')){
-                  event_date = element.dates.start.localDate;
+                let event_time = '';
+                if(element.hasOwnProperty('dates') && element.dates.hasOwnProperty('start')){
+                  if(element.dates.start.hasOwnProperty('localDate')){
+                    event_date = element.dates.start.localDate;
+                    if(element.dates.start.hasOwnProperty('localTime')){
+                      event_time =  element.dates.start.localTime;
+                    }
+                  }
                 }
                 let event_cat = 'N/A';
                 let genre = '';
@@ -196,28 +226,84 @@ export class AppComponent{
                     venue = element._embedded.venues[0].name;
                   }
                 }
-                
-                let newData = {"name" : element.name,"abbr":element.name.length < 30?element.name:(element.name.substring(0,25)+'...'),
-                  "date": event_date, "category": event_cat,"eventlink":'',"venue":venue,"clicked":false};
-                // console.log(newData.abbr);
-                this.outputData.push(newData);
+                let artists = "";
+                let artist_list = [];
+                if(element.hasOwnProperty('_embedded') && element._embedded.hasOwnProperty('attractions')){
+                  for(let ie =0;ie < element._embedded.attractions.length;ie++){
+                    artist_list.push(element._embedded.attractions[ie].name);
+                    if(!artists){
+                      artists += element._embedded.attractions[ie].name;
+                    } else{
+                      artists += ' | ' +element._embedded.attractions[ie].name;
+                    }
+                  }
+                }
 
+                let seatmap = "";
+                if(element.hasOwnProperty('seatmap')){
+                  seatmap = element.seatmap.staticUrl;
+                }
+
+                let status = "";
+                if(element.hasOwnProperty('dates') && element.dates.hasOwnProperty('status')){
+                  status = element.dates.status.code;
+                }
+
+                let eventlink = "";
+                if(element.hasOwnProperty('url')){
+                  eventlink = element.url;
+                }
+
+                let priceRange = "";
+                let currency = "";
+                if(element.hasOwnProperty('priceRanges')){
+                  let pmin = "";
+                  let pmax = ""
+                  // console.log(element.priceRanges[0])
+                  currency = element.priceRanges[0].currency;
+
+                  if(element.priceRanges[0].hasOwnProperty('min')){
+                    pmin = element.priceRanges[0].min;
+                  }
+                  if(element.priceRanges[0].hasOwnProperty('max')){
+                    pmax = element.priceRanges[0].max;
+                  }
+                  if(pmin && pmax){
+                    priceRange = '$'+pmin + ' ~ ' + '$'+pmax;
+                  } else if(pmin){
+                    priceRange = '$'+pmin;
+                  } else if(pmax){
+                    priceRange = '$'+pmax;
+                  }
+                }
+
+
+                let newData = {"name" : element.name,"abbr":element.name.length < 30?element.name:(element.name.substring(0,25)+'...'),
+                  "date": event_date,"time":event_time, "category": event_cat,"artist":artists,"artist_list":artist_list,"eventlink":eventlink,"venue":venue,
+                  "clicked":false,"seatmap":seatmap,"status":status,"price":priceRange,"currency":currency,"id":''};
+                // console.log(newData.artist);
+                this.outputData.push(newData);
+                this.highlight.push(false);
                 
-              });
+                
+              }
 
               this.outputData.sort((a,b) => { 
                 let dateA = new Date(a.date);
                 let dateB = new Date(b.date);
                 return dateA - dateB;
               });
-              // console.log(this.outputData);
+              // 
+              let indx = 0
+              this.outputData.forEach(element => {
+                element.id = indx++;
+              });
+              console.log(this.outputData);
 
           }
 
 
     });
-    this.loadingData = false;
-
   } 
 
   addFav(dt){
@@ -231,8 +317,209 @@ export class AppComponent{
   liked = "assets/images/baseline_star_border_black_24dp.png";
   disliked= "assets/images/baseline_star_white_24dp.jpg";
 
+  detailTitle = "";
+  detailArtist = "";
+  detailVenue = "";
+  detailDate : Date;
+  detailTime = "";
+  detailCat = "";
+  detailPrice = "";
+  detailStatus = "";
+  detailUrl = "";
+  detailSeat = "";
+  artist_list = "";
+  // detailCurrency = "";
+  artist_detail_list = [];
+  detail_index:number;
+
+  reset_highlight(){
+    for (let ih = 0; ih < this.highlight.length; ih++) {
+      if(this.highlight[ih]){
+        this.highlight[ih]= false;
+      }
+    }
+  }
+
   displayDetail(ind){
-    console.log(`index is ${ind}`);
+    this.detail_index=ind;
+    this.show = this.show_limit;
+    this.reset_highlight();
+    this.highlight[ind] = true;
+    this.DetailTag = true;
+    this.artist_detail_list = [];
+    this.showDetail = true;
+    this.yesEvent = false;
+    console.log(ind);
+
+    this.detailTitle = this.outputData[ind].name;
+    this.detailVenue = this.outputData[ind].venue;
+    this.detailCat = this.outputData[ind].category.replace('-',' | ');
+    this.detailDate = new Date(this.outputData[ind].date);
+    this.detailTime = this.outputData[ind].time;
+    this.detailArtist = this.outputData[ind].artist;
+    this.detailStatus = this.outputData[ind].status;
+    this.detailUrl = this.outputData[ind].eventlink;
+    this.detailSeat = this.outputData[ind].seatmap;
+    this.detailPrice = this.outputData[ind].price;
+    this.artist_list = this.outputData[ind].artist_list;
+    // this.detailCurrency = this.outputData[ind].currency;
+    // console.log(this.detailPrice);
+    // console.log(this.detailSeat);
+    // console.log(this.detailUrl);
+    // console.log(this.artist_list);
+    this.venue_detail(this.detailVenue);
+    this.upcoming_detail(this.detailVenue);
+    
+      for(let il = 0; il < this.artist_list.length; il ++){
+        let element = this.artist_list[il];
+        // console.log(element);
+        let art_name = element;
+        let art_pop = '';
+        let art_followers = '';
+        let art_url = '';
+        let art_images = [];
+        if(this.detailCat.includes('Music')){
+          let spotify_url =  `${this.host_url}/artistdetails`;
+          this.http.get(spotify_url,{params:{keyword:element}}).subscribe(resp => {
+            // console.log(JSON.parse(JSON.stringify(resp)));
+            let artists_array = JSON.parse(JSON.stringify(resp)).artists.items;
+            if(artists_array.length){
+              let artist_detail;
+              // console.log(artists_array);
+              for(let ia = 0;ia < artists_array.length; ia++){
+                if(artists_array[ia].name.toUpperCase() == element.toUpperCase()){
+                  artist_detail = artists_array[ia];
+                  break;
+                }
+              }
+              art_pop = artist_detail.popularity;
+              art_followers = artist_detail.followers.total.toLocaleString();
+              art_url = artist_detail.external_urls.spotify;
+            } 
+          });
+        }
+        let search_url = `${this.host_url}/images`;
+        this.http.get(search_url,{params:{keyword:element}}).subscribe(resp => {
+          let images_array = JSON.parse(JSON.stringify(resp));
+          for(let ilink = 0; ilink < images_array.length; ilink ++){
+            // console.log(images_array[ilink].link);
+            art_images.push(images_array[ilink].link);
+          }
+          // console.log(art_images);
+          let new_artist = {'id':il,'art_name':art_name,'art_url':art_url,'art_pop':art_pop,'art_followers':art_followers,'art_images':art_images};
+          this.artist_detail_list.push(new_artist);
+          this.artist_detail_list.sort(function(a,b){return a.id - b.id});
+        });
+        
+      
+    }
+    // console.log(this.artist_detail_list);
+  }
+
+
+  venue_add = "";
+  venue_city = "";
+  venue_number = "";
+  venue_open = "";
+  venue_rule = "";
+  venue_child = "";
+  venue_lat:number = 0;
+  venue_lon:number = 0;
+
+  reset_venue(){
+    this.venue_add = "";
+    this.venue_city = "";
+    this.venue_number = "";
+    this.venue_open = "";
+    this.venue_rule = "";
+    this.venue_child = "";
+    this.venue_lat = 0;
+    this.venue_lon = 0;
+  }
+
+  venue_detail(venue_name){
+    this.reset_venue();
+    let venue_url = `${this.host_url}/venue`;
+    this.http.get(venue_url,{params:{keyword:venue_name}}).subscribe(resp => {
+      let venue_info = JSON.parse(JSON.stringify(resp));
+      if(venue_info.hasOwnProperty('empty')){
+        console.log('Empty Venue Info!');
+      } else if(venue_info.hasOwnProperty('error')){
+        console.log('Error Venue Info!');
+      } else{
+
+        if(venue_info.hasOwnProperty('location')){
+          this.venue_lat = parseFloat(venue_info.location.latitude);
+          this.venue_lon = parseFloat(venue_info.location.longitude);
+          // console.log(this.venue_lat,this.venue_lon);
+        }
+
+        if(venue_info.hasOwnProperty('address') && venue_info.address.hasOwnProperty('line1')){
+          this.venue_add = venue_info.address.line1;
+        }
+        if(venue_info.hasOwnProperty('city'))
+        this.venue_city = venue_info.city.name;
+      } if(venue_info.hasOwnProperty('state')){
+        this.venue_city += ', '+ venue_info.state.name;
+      }
+      if(venue_info.hasOwnProperty('boxOfficeInfo')){
+        if(venue_info.boxOfficeInfo.hasOwnProperty('phoneNumberDetail')){
+          this.venue_number = venue_info.boxOfficeInfo.phoneNumberDetail;
+        }
+        if(venue_info.boxOfficeInfo.hasOwnProperty('openHoursDetail')){
+          this.venue_open = venue_info.boxOfficeInfo.openHoursDetail;
+        }
+      }
+
+      if(venue_info.hasOwnProperty('generalInfo')){
+        if(venue_info.generalInfo.hasOwnProperty('generalRule')){
+          this.venue_rule = venue_info.generalInfo.generalRule;
+        }
+        if(venue_info.generalInfo.hasOwnProperty('childRule')){
+          this.venue_child = venue_info.generalInfo.childRule;
+        }
+      }
+
+      
+    });
+  }
+  
+  upcoming_events = [];
+  upcoming_detail(venue_name){
+    this.upcoming_events = [];
+    let upcoming_url = `${this.host_url}/songkick`;
+    this.http.get(upcoming_url,{params:{keyword:venue_name}}).subscribe(resp => {
+      let res_events = JSON.parse(JSON.stringify(resp));
+      // console.log(res_events);
+      res_events.forEach(event => {
+        let event_name = event.displayName;
+        let event_uri = event.uri;
+        let event_artist = event.performance[0].displayName;
+        let event_date = new Date(event.start.date);
+        let event_time = '';
+        if(event.start.hasOwnProperty('time')){
+          event_time = event.start.time;
+        }
+        let event_type = event.type;
+        this.upcoming_events.push({'name':event_name,'date':event_date,'time':event_time,'type':event_type,'uri':event_uri,'artist':event_artist})
+      });
+    
+    });
+  }
+
+
+
+ 
+
+  detailTag(){
+    this.showDetail = true;
+    this.yesEvent = false;
+  }
+
+  showList(){
+    this.showDetail = false;
+    this.yesEvent = true;
   }
 }
+
 

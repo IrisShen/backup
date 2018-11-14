@@ -36,10 +36,6 @@ input.ng-touched.ng-invalid{
     border: 1px solid red;
 }
 
-.warning-banner{
-    margin-left: 15%;
-    margin-right: 15%;
-}
 
 .liked {
     color: burlywood;
@@ -48,3 +44,44 @@ input.ng-touched.ng-invalid{
 
 
 }
+
+.detail-links{
+    color:#007bff;
+}
+
+.detail-links:hover{
+    text-decoration: underline;
+}
+
+.table td{
+    vertical-align: middle;
+}
+
+.table th{
+    vertical-align: middle;
+}
+
+.event_table th{
+    width: 40%;
+}
+
+.artist_table th{
+    width:50%;
+}
+
+.venue-table th{
+    width: 12%;
+}
+.progress-wrapper{
+    position: relative;
+}
+
+.current{
+    position: absolute;
+    top:14px;
+    left:15px;
+}
+
+agm-map {
+    height: 400px;
+  }
